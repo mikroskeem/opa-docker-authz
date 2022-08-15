@@ -1,12 +1,25 @@
-FROM alpine:latest as certs
-RUN apk --update add ca-certificates
+FROM --platform=$BUILDPLATFORM golang:1.18-alpine AS builder
 
-FROM scratch
+ARG TARGETOS
+ARG TARGETARCH
+ARG TARGETPLATFORM
 
-LABEL maintainer="Torin Sandall <torinsandall@gmail.com>"
+RUN apk add --no-cache git
 
-COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+WORKDIR $GOPATH/src/github.com/mikroskeem/opa-docker-authz
 
-COPY opa-docker-authz /opa-docker-authz
+# Download dependencies
+COPY go.* .
+RUN CGO_ENABLED=0 go mod download
+
+# Build app
+COPY . .
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go build \
+    -ldflags="-w -s" \
+    -o /opa-docker-authz .
+
+FROM --platform=$TARGETPLATFORM scratch
+COPY --from=builder /etc/ssl/cert.pem /etc/ssl/cert.pem
+COPY --from=builder /opa-docker-authz /opa-docker-authz
 
 ENTRYPOINT ["/opa-docker-authz"]
