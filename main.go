@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/docker/go-plugins-helpers/authorization"
-	version_pkg "github.com/open-policy-agent/opa-docker-authz/version"
+	version_pkg "github.com/mikroskeem/opa-docker-authz/version"
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/loader"
 	"github.com/open-policy-agent/opa/rego"
