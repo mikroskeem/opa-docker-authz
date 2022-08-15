@@ -23,7 +23,7 @@
             "source": "/etc/docker",
             "destination": "/opa",
             "type": "none",
-            "options": ["bind", "ro"],
+            "options": ["bind", "ro", "rslave"],
             "settable": ["source"]
        }
     ],
