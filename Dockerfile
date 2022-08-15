@@ -1,5 +1,7 @@
 FROM --platform=$BUILDPLATFORM golang:1.18-alpine AS builder
 
+LABEL org.opencontainers.image.source=https://github.com/mikroskeem/opa-docker-authz
+
 ARG TARGETOS
 ARG TARGETARCH
 ARG TARGETPLATFORM
