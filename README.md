@@ -1,5 +1,16 @@
 # opa-docker-authz
 
+# Fork notes
+
+This fork exists to have an updated OPA SDK and do other opinionated changes.
+
+However after discovering that [Docker developers are not interested in improving AuthZ](https://github.com/moby/moby/issues/35711), and
+insist on users setting up a wrapper instead, then so be it. I would've loved to use Unix socket authentication.
+
+This works if you're using TLS though.
+
+# Original readme below
+
 This project is used to show how OPA can help policy-enable an existing service.
 
 In this example, we policy-enable the authorization functionality available in the Docker Engine, which is implemented using a plugin architecture. Plugins were introduced in the Docker Engine in 1.10, as a v1 implementation, and further extended in 1.13, as a v2 implementation. Plugins that adhere to the former are often termed [legacy plugins](https://docs.docker.com/engine/extend/legacy_plugins/), whilst the latter are termed [managed plugins](https://docs.docker.com/engine/extend/).
