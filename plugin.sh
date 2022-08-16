@@ -1,19 +1,33 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-set -ex
+name="opa-docker-authz"
+version="v0.9"
+fname="ghcr.io/mikroskeem/${name}"
+fnamev2="${fname}-v2"
+platforms=(
+	"linux/amd64"
+	#"linux/arm64"
+)
 
-[ -d ./rootfs ] && rm -rf ./rootfs
-mkdir ./rootfs
+imgname="${name}-${RANDOM}"
 
-echo "Creating root filesystem for plugin ..."
-docker image build -t rootfsimage .
-id=`docker container create rootfsimage true`
-docker container export "$id" | tar -x -C ./rootfs
+[ -d ./plugin ] && rm -rf ./plugin
+mkdir -p ./plugin/rootfs
+jq -c < ./config.json > ./plugin/config.json
 
-echo "Creating plugin "${REPO}-v2:${VERSION}" ..."
-docker plugin create "${REPO}-v2:${VERSION}" .
+cid=""
+cleanup () {
+	docker image rm "${imgname}" || true
+	(test -n "${cid}" && docker container rm "${cid}") || true
+	rm -rf ./plugin || true
+}
 
-echo "Cleanup..."
-docker container rm -f "$id" > /dev/null
-docker image rm -f rootfsimage > /dev/null
-rm -rf ./rootfs
+trap "cleanup" EXIT
+
+docker buildx build --platform="$(IFS=","; echo -n "${platforms[*]}")" -t "${imgname}" .
+docker image tag "${imgname}" "${fname}:${version}"
+
+cid="$(docker container create "${imgname}" dummy)"
+docker container export "${cid}" | tar -x -C ./plugin/rootfs
+docker plugin create "${fnamev2}:${version}" ./plugin
