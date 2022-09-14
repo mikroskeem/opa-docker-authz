@@ -9,6 +9,8 @@ insist on users setting up a wrapper instead, then so be it. I would've loved to
 
 This works if you're using TLS though.
 
+New features are hacked on top of it with low effort for now.
+
 # Original readme below
 
 This project is used to show how OPA can help policy-enable an existing service.
