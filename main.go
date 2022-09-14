@@ -217,7 +217,38 @@ func makeInput(r authorization.Request) (interface{}, error) {
 				}
 			}
 		}
-		// TODO: check Mounts of Type bind as well
+
+		for _, v := range hostConfig["Mounts"].([]map[string]interface{}) {
+			mountType := v["Type"].(string)
+			if !strings.EqualFold(mountType, "bind") {
+				continue
+			}
+
+			hostPath := v["Source"].(string)
+			if !strings.HasPrefix(hostPath, "/") {
+				continue
+			}
+
+			bindMounts = append(bindMounts, hostPath)
+
+			resolved, err := filepath.EvalSymlinks(hostPath)
+			if err != nil {
+				// TODO: log
+				continue
+			}
+
+			bindMountsResolved = append(bindMountsResolved, resolved)
+
+			isReadonly := false
+			readonlyValue, ok := v["Readonly"]
+			if ok {
+				isReadonly = readonlyValue.(bool)
+			}
+
+			if isReadonly {
+				bindMountsResolvedRO = append(bindMountsResolvedRO, resolved)
+			}
+		}
 	}
 
 	input := map[string]interface{}{
