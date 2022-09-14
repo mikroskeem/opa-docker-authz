@@ -3,6 +3,7 @@ module github.com/mikroskeem/opa-docker-authz
 go 1.18
 
 require (
+	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/go-plugins-helpers v0.0.0-20211224144127-6eecb7beb651
 	github.com/open-policy-agent/opa v0.43.0
 )

@@ -1,6 +1,12 @@
 package main
 
-import "testing"
+import (
+	"io/ioutil"
+	"testing"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/docker/go-plugins-helpers/authorization"
+)
 
 func TestNormalizeAllowPath(t *testing.T) {
 	tests := []struct {
@@ -43,4 +49,26 @@ func TestNormalizeAllowPath(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestInput(t *testing.T) {
+	rawBody, err := ioutil.ReadFile("./input.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	request := authorization.Request{
+		RequestBody: rawBody,
+		RequestHeaders: map[string]string{
+			"Content-Type": "application/json",
+		},
+		RequestURI: "http://127.0.0.1:2376/v1.41/containers/create",
+	}
+
+	input, err := MakeInput(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	spew.Dump(input)
 }

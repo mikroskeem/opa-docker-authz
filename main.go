@@ -80,7 +80,7 @@ func (p DockerAuthZPlugin) evaluatePolicyFile(ctx context.Context, r authorizati
 		return false, err
 	}
 
-	input, err := makeInput(r)
+	input, err := MakeInput(r)
 	if err != nil {
 		return false, err
 	}
@@ -151,7 +151,7 @@ func (p DockerAuthZPlugin) evaluate(ctx context.Context, r authorization.Request
 	}
 
 	if p.configFile != "" {
-		input, err := makeInput(r)
+		input, err := MakeInput(r)
 		if err != nil {
 			return false, err
 		}
@@ -177,7 +177,7 @@ func (p DockerAuthZPlugin) evaluate(ctx context.Context, r authorization.Request
 	return p.evaluatePolicyFile(ctx, r)
 }
 
-func makeInput(r authorization.Request) (interface{}, error) {
+func MakeInput(r authorization.Request) (interface{}, error) {
 
 	var body map[string]interface{}
 
@@ -193,60 +193,70 @@ func makeInput(r authorization.Request) (interface{}, error) {
 	}
 
 	// resolve bind mount paths to symlink targets
-	var bindMounts []string
-	var bindMountsResolved []string
-	var bindMountsResolvedRO []string
-	hostConfig, ok := body["HostConfig"].(map[string]interface{})
-	if ok {
-		for _, v := range hostConfig["Binds"].([]interface{}) {
-			bindParts := strings.Split(v.(string), ":")
-			hostPath := bindParts[0]
-			if strings.HasPrefix(hostPath, "/") {
-				bindMounts = append(bindMounts, hostPath)
-				resolved, err := filepath.EvalSymlinks(hostPath)
-				if err == nil {
-					// if it exists add to bindMountsResolved
-					bindMountsResolved = append(bindMountsResolved, resolved)
-					// if it also is a ReadOnly mount, add to bindMountsResolvedRO
-					if len(bindParts) == 3 {
-						opt := bindParts[2]
-						if opt == "ro" {
-							bindMountsResolvedRO = append(bindMountsResolvedRO, resolved)
+	bindMounts := []string{}
+	bindMountsResolved := []string{}
+	bindMountsResolvedRO := []string{}
+
+	hostConfig, hasHostConfig := body["HostConfig"]
+	if hasHostConfig {
+		hostConfig := hostConfig.((map[string]interface{}))
+		bindsValue, hasBinds := hostConfig["Binds"]
+		mountsValue, hasMounts := hostConfig["Mounts"]
+
+		if hasBinds && bindsValue != nil {
+			for _, v := range bindsValue.([]interface{}) {
+				bindParts := strings.Split(v.(string), ":")
+				hostPath := bindParts[0]
+				if strings.HasPrefix(hostPath, "/") {
+					bindMounts = append(bindMounts, hostPath)
+					resolved, err := filepath.EvalSymlinks(hostPath)
+					if err == nil {
+						// if it exists add to bindMountsResolved
+						bindMountsResolved = append(bindMountsResolved, resolved)
+						// if it also is a ReadOnly mount, add to bindMountsResolvedRO
+						if len(bindParts) == 3 {
+							opt := bindParts[2]
+							if opt == "ro" {
+								bindMountsResolvedRO = append(bindMountsResolvedRO, resolved)
+							}
 						}
 					}
 				}
 			}
 		}
 
-		for _, v := range hostConfig["Mounts"].([]map[string]interface{}) {
-			mountType := v["Type"].(string)
-			if !strings.EqualFold(mountType, "bind") {
-				continue
-			}
+		if hasMounts && mountsValue != nil {
+			for _, v := range mountsValue.([]interface{}) {
+				v := v.(map[string]interface{})
 
-			hostPath := v["Source"].(string)
-			if !strings.HasPrefix(hostPath, "/") {
-				continue
-			}
+				mountType := v["Type"].(string)
+				if !strings.EqualFold(mountType, "bind") {
+					continue
+				}
 
-			bindMounts = append(bindMounts, hostPath)
+				hostPath := v["Source"].(string)
+				if !strings.HasPrefix(hostPath, "/") {
+					continue
+				}
 
-			resolved, err := filepath.EvalSymlinks(hostPath)
-			if err != nil {
-				// TODO: log
-				continue
-			}
+				bindMounts = append(bindMounts, hostPath)
 
-			bindMountsResolved = append(bindMountsResolved, resolved)
+				resolved, err := filepath.EvalSymlinks(hostPath)
+				if err != nil {
+					// TODO: log
+					continue
+				}
 
-			isReadonly := false
-			readonlyValue, ok := v["Readonly"]
-			if ok {
-				isReadonly = readonlyValue.(bool)
-			}
+				bindMountsResolved = append(bindMountsResolved, resolved)
 
-			if isReadonly {
-				bindMountsResolvedRO = append(bindMountsResolvedRO, resolved)
+				isReadonly := false
+				if readonlyValue, ok := v["Readonly"]; ok {
+					isReadonly = readonlyValue.(bool)
+				}
+
+				if isReadonly {
+					bindMountsResolvedRO = append(bindMountsResolvedRO, resolved)
+				}
 			}
 		}
 	}
