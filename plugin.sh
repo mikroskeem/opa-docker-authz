@@ -2,7 +2,7 @@
 set -euo pipefail
 
 name="opa-docker-authz"
-version="v0.9"
+version="v0.9.1"
 fname="ghcr.io/mikroskeem/${name}"
 fnamev2="${fname}-v2"
 platforms=(
