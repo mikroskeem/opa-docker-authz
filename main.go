@@ -207,6 +207,7 @@ func MakeInput(r authorization.Request) (interface{}, error) {
 			for _, v := range bindsValue.([]interface{}) {
 				bindParts := strings.Split(v.(string), ":")
 				hostPath := bindParts[0]
+				hostPath = filepath.Clean(hostPath)
 				if strings.HasPrefix(hostPath, "/") {
 					bindMounts = append(bindMounts, hostPath)
 					resolved, err := filepath.EvalSymlinks(hostPath)
@@ -239,6 +240,7 @@ func MakeInput(r authorization.Request) (interface{}, error) {
 					continue
 				}
 
+				hostPath = filepath.Clean(hostPath)
 				bindMounts = append(bindMounts, hostPath)
 
 				resolved, err := filepath.EvalSymlinks(hostPath)
