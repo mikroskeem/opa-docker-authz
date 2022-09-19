@@ -20,7 +20,7 @@
     "mounts": [
        {
             "name": "policy",
-            "source": "/etc/docker",
+            "source": "/etc/docker/opa",
             "destination": "/opa",
             "type": "none",
             "options": ["bind", "ro", "rslave"],
